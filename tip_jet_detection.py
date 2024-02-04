@@ -2,7 +2,7 @@
 Created on 31/01/2024
 @author: Hind FARIS and Jérôme SIOC'HAN DE KERSABIEC
 
-Class with useful functions to analyse Tip-Jet events
+Class with useful functions to analyse Tip-Jet events.
 """
 
 from typing import Tuple

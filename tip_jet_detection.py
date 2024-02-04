@@ -354,7 +354,7 @@ class Ensemble:
           seasonal_nb_tip_jet[member_name] = member.seasonal_events()
         return seasonal_nb_tip_jet
 
-    def mean_seasonal_events_ensemble(self) -> np.ndarray:
+    def mean_seasonal_events_ensemble(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         average the seasonal number of Tip-Jet for all members from 2015 to 2100
 

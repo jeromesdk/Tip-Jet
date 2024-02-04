@@ -228,38 +228,76 @@ class Member:
         eof = pca_result[:, 0]
         return eof
 
-    def overall_events(self) -> int:
-        """
-        Count the number of Tip-Jet events
-
-        :param eof: PCA result on important features for Tip-Jet detection
-        :return: Number of Tip-Jet events in the whole period of xarray
-        """
-        return len(consecutive_groups(np.where(self.eof > self.threshold)[0]))
-
-
     def annual_events(self) -> np.ndarray:
-      """
-      Count the number of Tip-Jet events by year
+        """
+        Count the number of Tip-Jet events by year
 
-      :return: Number of Tip-Jet events for each year in a numpy array
+        :return: Number of Tip-Jet events for each year in a numpy array
+        """
+        time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
+
+        # Create a DataFrame with time and indices
+        df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
+
+        tip_jet_by_year = np.zeros(2101-2015)
+        for index, year in enumerate(range(2015, 2101)):
+            start_date = pd.to_datetime(f'{year}-01-01')
+            end_date = pd.to_datetime(f'{year+1}-01-01')
+
+            # Use DataFrame to filter data by year and get corresponding indices
+            year_indices = df.loc[(df['time'] >= start_date) & (df['time'] < end_date), 'indices'].values
+            year_eof = self.eof[year_indices]
+            tip_jet_by_year[index] = len(consecutive_groups(np.where(year_eof > self.threshold)[0]))
+        return tip_jet_by_year
+
+    def seasonal_events(self) -> np.ndarray:
+      """
+      Count the number of Tip-Jet events by season
+
+      :return: An array of array representing the number of Tip-Jet events for each season for each year
       """
       time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
 
       # Create a DataFrame with time and indices
       df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
 
-      tip_jet_by_year = np.zeros(2101-2015)
+      tip_jet_by_year = np.zeros((2101-2015,4))
       for index, year in enumerate(range(2015, 2101)):
-          start_date = pd.to_datetime(f'{year}-01-01')
-          end_date = pd.to_datetime(f'{year+1}-01-01')
+          winter_start_date_1 = pd.to_datetime(f'{year}-01-01')
+          winter_end_date_1 = pd.to_datetime(f'{year}-03-20')
 
-          # Use DataFrame to filter data by year and get corresponding indices
-          year_indices = df.loc[(df['time'] >= start_date) & (df['time'] < end_date), 'indices'].values
-          year_eof = self.eof[year_indices]
-          tip_jet_by_year[index] = len(consecutive_groups(np.where(year_eof > self.threshold)[0]))
+          spring_start_date = pd.to_datetime(f'{year}-03-20')
+          spring_end_date = pd.to_datetime(f'{year}-06-20')
+
+          summer_start_date = pd.to_datetime(f'{year}-06-20')
+          summer_end_date = pd.to_datetime(f'{year}-09-22')
+
+          fall_start_date = pd.to_datetime(f'{year}-09-22')
+          fall_end_date = pd.to_datetime(f'{year}-12-21')
+
+          winter_start_date_2 = pd.to_datetime(f'{year}-12-21')
+          winter_end_date_2 = pd.to_datetime(f'{year+1}-01-01')
+
+          year_indices_winter = df.loc[((df['time'] >= winter_start_date_1) & (df['time'] < winter_end_date_1)) | ((df['time'] >= winter_start_date_2) & (df['time'] < winter_end_date_2)), 'indices'].values
+          year_indices_spring = df.loc[(df['time'] >= spring_start_date) & (df['time'] < spring_end_date), 'indices'].values
+          year_indices_summer = df.loc[(df['time'] >= summer_start_date) & (df['time'] < summer_end_date), 'indices'].values
+          year_indices_fall = df.loc[(df['time'] >= fall_start_date) & (df['time'] < fall_end_date), 'indices'].values
+
+          winter_eof = self.eof[year_indices_winter]
+          spring_eof = self.eof[year_indices_spring]
+          summer_eof = self.eof[year_indices_summer]
+          fall_eof = self.eof[year_indices_fall]
+
+          tip_jet_by_year[index] = np.array(
+              [
+                  len(consecutive_groups(np.where(winter_eof > self.threshold)[0])),
+                  len(consecutive_groups(np.where(spring_eof > self.threshold)[0])),
+                  len(consecutive_groups(np.where(summer_eof > self.threshold)[0])),
+                  len(consecutive_groups(np.where(fall_eof > self.threshold)[0]))
+                  ]
+              )
+
       return tip_jet_by_year
-
 
 
 class Ensemble:
@@ -283,29 +321,6 @@ class Ensemble:
             self.members[member_name] = Member(activity_id='ScenarioMIP', table_id='day', experiment_id=self.experiment,
                                           source_id='IPSL-CM6A-LR', member_id=member_name)
 
-    def eofs(self) -> dict:
-        """
-        Calculate PCA score on all members
-
-        :return: a dictionary with the name of the member_id and the PCA score for each member
-        """
-        eofs = {}
-        for member_name, member in self.members.items():
-            eofs[member_name] = member.eof
-        return eofs
-
-    def overall_events_ensemble(self) -> dict:
-        """
-        Count the number of Tip-Jet events for each member
-
-        :param dic_eofs: a dictionary containing the PCA score for each member
-        :return: a dictionary with the name of the member_id and the number of Tip-Jet events
-        """
-        events = {}
-        for member_name, member in self.members.items():
-            events[member_name] = member.overall_events()
-        return events
-
     def annual_events_ensemble(self) -> dict:
         """
         Count the number of Tip-Jet events for each member by year
@@ -327,3 +342,25 @@ class Ensemble:
         average_annual_nb_tip_jet = np.mean(array_member_nb_tip_jet, axis=0)
         std_annual_nb_tip_jet = np.std(array_member_nb_tip_jet, axis=0)
         return average_annual_nb_tip_jet, std_annual_nb_tip_jet
+
+    def seasonal_events_ensemble(self) -> dict:
+        """
+        Count the number of Tip-Jet events for each member and for each season of each year
+
+        :return: a dictionary with the name of the member_id and the number of Tip-Jet events for each season of each year
+        """
+        seasonal_nb_tip_jet = {}
+        for member_name, member in self.members.items():
+          seasonal_nb_tip_jet[member_name] = member.seasonal_events()
+        return seasonal_nb_tip_jet
+
+    def mean_seasonal_events_ensemble(self) -> np.ndarray:
+        """
+        average the seasonal number of Tip-Jet for all members from 2015 to 2100
+
+        :return: an array containing the seasonal average number of Tip-jet for all the members
+        """
+        array_member_nb_tip_jet = np.array(list(self.seasonal_events_ensemble().values()))
+        average_seasonal_nb_tip_jet = np.mean(array_member_nb_tip_jet, axis=0)
+        std_seasonal_nb_tip_jet = np.std(array_member_nb_tip_jet, axis=0)
+        return average_seasonal_nb_tip_jet, std_seasonal_nb_tip_jet

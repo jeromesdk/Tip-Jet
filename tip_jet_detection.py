@@ -251,53 +251,53 @@ class Member:
         return tip_jet_by_year
 
     def seasonal_events(self) -> np.ndarray:
-      """
-      Count the number of Tip-Jet events by season
+        """
+        Count the number of Tip-Jet events by season
 
-      :return: An array of array representing the number of Tip-Jet events for each season for each year
-      """
-      time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
+        :return: An array of array representing the number of Tip-Jet events for each season for each year
+        """
+        time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
 
-      # Create a DataFrame with time and indices
-      df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
+        # Create a DataFrame with time and indices
+        df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
 
-      tip_jet_by_year = np.zeros((2101-2015,4))
-      for index, year in enumerate(range(2015, 2101)):
-          winter_start_date_1 = pd.to_datetime(f'{year}-01-01')
-          winter_end_date_1 = pd.to_datetime(f'{year}-03-20')
+        tip_jet_by_year = np.zeros((2101-2015,4))
+        for index, year in enumerate(range(2015, 2101)):
+            winter_start_date_1 = pd.to_datetime(f'{year}-01-01')
+            winter_end_date_1 = pd.to_datetime(f'{year}-03-20')
 
-          spring_start_date = pd.to_datetime(f'{year}-03-20')
-          spring_end_date = pd.to_datetime(f'{year}-06-20')
+            spring_start_date = pd.to_datetime(f'{year}-03-20')
+            spring_end_date = pd.to_datetime(f'{year}-06-20')
 
-          summer_start_date = pd.to_datetime(f'{year}-06-20')
-          summer_end_date = pd.to_datetime(f'{year}-09-22')
+            summer_start_date = pd.to_datetime(f'{year}-06-20')
+            summer_end_date = pd.to_datetime(f'{year}-09-22')
 
-          fall_start_date = pd.to_datetime(f'{year}-09-22')
-          fall_end_date = pd.to_datetime(f'{year}-12-21')
+            fall_start_date = pd.to_datetime(f'{year}-09-22')
+            fall_end_date = pd.to_datetime(f'{year}-12-21')
 
-          winter_start_date_2 = pd.to_datetime(f'{year}-12-21')
-          winter_end_date_2 = pd.to_datetime(f'{year+1}-01-01')
+            winter_start_date_2 = pd.to_datetime(f'{year}-12-21')
+            winter_end_date_2 = pd.to_datetime(f'{year+1}-01-01')
 
-          year_indices_winter = df.loc[((df['time'] >= winter_start_date_1) & (df['time'] < winter_end_date_1)) | ((df['time'] >= winter_start_date_2) & (df['time'] < winter_end_date_2)), 'indices'].values
-          year_indices_spring = df.loc[(df['time'] >= spring_start_date) & (df['time'] < spring_end_date), 'indices'].values
-          year_indices_summer = df.loc[(df['time'] >= summer_start_date) & (df['time'] < summer_end_date), 'indices'].values
-          year_indices_fall = df.loc[(df['time'] >= fall_start_date) & (df['time'] < fall_end_date), 'indices'].values
+            year_indices_winter = df.loc[((df['time'] >= winter_start_date_1) & (df['time'] < winter_end_date_1)) | ((df['time'] >= winter_start_date_2) & (df['time'] < winter_end_date_2)), 'indices'].values
+            year_indices_spring = df.loc[(df['time'] >= spring_start_date) & (df['time'] < spring_end_date), 'indices'].values
+            year_indices_summer = df.loc[(df['time'] >= summer_start_date) & (df['time'] < summer_end_date), 'indices'].values
+            year_indices_fall = df.loc[(df['time'] >= fall_start_date) & (df['time'] < fall_end_date), 'indices'].values
 
-          winter_eof = self.eof[year_indices_winter]
-          spring_eof = self.eof[year_indices_spring]
-          summer_eof = self.eof[year_indices_summer]
-          fall_eof = self.eof[year_indices_fall]
+            winter_eof = self.eof[year_indices_winter]
+            spring_eof = self.eof[year_indices_spring]
+            summer_eof = self.eof[year_indices_summer]
+            fall_eof = self.eof[year_indices_fall]
 
-          tip_jet_by_year[index] = np.array(
-              [
-                  len(consecutive_groups(np.where(winter_eof > self.threshold)[0])),
-                  len(consecutive_groups(np.where(spring_eof > self.threshold)[0])),
-                  len(consecutive_groups(np.where(summer_eof > self.threshold)[0])),
-                  len(consecutive_groups(np.where(fall_eof > self.threshold)[0]))
-                  ]
-              )
+            tip_jet_by_year[index] = np.array(
+                [
+                    len(consecutive_groups(np.where(winter_eof > self.threshold)[0])),
+                    len(consecutive_groups(np.where(spring_eof > self.threshold)[0])),
+                    len(consecutive_groups(np.where(summer_eof > self.threshold)[0])),
+                    len(consecutive_groups(np.where(fall_eof > self.threshold)[0]))
+                    ]
+            )
 
-      return tip_jet_by_year
+        return tip_jet_by_year
 
 
 class Ensemble:

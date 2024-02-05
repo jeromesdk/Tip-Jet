@@ -2,7 +2,7 @@
 Created on 31/01/2024
 @author: Hind FARIS and Jérôme SIOC'HAN DE KERSABIEC
 
-Class with useful functions to analyse Tip-Jet events
+Class with useful functions to analyse Tip-Jet events.
 """
 
 from typing import Tuple
@@ -85,6 +85,7 @@ class Member:
 
     def zonal_wind_speed(self) -> Tuple[xr.core.dataarray.DataArray, xr.core.dataarray.DataArray]:
         """
+
         Extracts zonal wind speed on CMIP6 dataset in the world and in the area of interest (south greenland)
 
         :return: zonal wind speed on the globe and the area of interest

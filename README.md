@@ -19,3 +19,10 @@ trajectory.
 2. Use Google Colab to run the code. Add the `tip_jet_detection.py` file to your Colab environment.
 
 3. Notebooks can be opened and executed independently in Colab.
+
+## Reference
+
+To detect Tip-Jet events, we used the methodology as described by Våge,
+Kjetil, et al. 
+
+Våge, Kjetil, et al. ["Multi‐event analysis of the westerly Greenland tip jet based upon 45 winters in ERA‐40."](https://rpickart.whoi.edu/wp-content/uploads/sites/53/2016/09/Vage-et-all-2009-muti-event-analysis.pdf) Quarterly Journal of the Royal Meteorological Society: A journal of the atmospheric sciences, applied meteorology and physical oceanography 135.645 (2009): 1999-2011]

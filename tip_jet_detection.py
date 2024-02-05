@@ -2,7 +2,7 @@
 Created on 31/01/2024
 @author: Hind FARIS and Jérôme SIOC'HAN DE KERSABIEC
 
-Class with useful functions to analyse Tip-Jet events.
+Class with useful functions to analyse Tip-Jet events
 """
 
 from typing import Tuple
@@ -176,10 +176,6 @@ class Member:
         mapper = gcs.get_mapper(zstore)
         ds_slp = xr.open_zarr(mapper, consolidated=True, decode_times=False).psl
 
-        # We select the area concerned by the Tip-Jet (greenland south)
-        ds_slp_area = ds_slp.where(
-            (ds_slp.lat > 57) & (ds_slp.lat < 61) & (ds_slp.lon > 360 - 46) & (ds_slp.lon < 360 - 33), drop=True)
-
         # We select the nearest Lon/Lat to the points defined in the paper
         lon_a, lat_a = 360 + np.linspace(-47, -40, 20), np.linspace(60, 62, 20)
         lon_b, lat_b = 360 + np.linspace(-45, -40, 20), np.linspace(57, 62, 20)
@@ -207,7 +203,7 @@ class Member:
         """
         Apply PCA on important features for Tip-Jet detection
 
-        :return: Result of the PCA
+        :return: a numpy array containing the result of the PCA
         """
         nb_days, features = len(self.wind_mag_area.time.values), 5
         tip_jet_detection_features = np.zeros((nb_days, features))
@@ -232,7 +228,7 @@ class Member:
         """
         Count the number of Tip-Jet events by year
 
-        :return: Number of Tip-Jet events for each year in a numpy array
+        :return: a numpy array containing the number of Tip-Jet events for each year
         """
         time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
 
@@ -261,7 +257,7 @@ class Member:
         # Create a DataFrame with time and indices
         df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
 
-        tip_jet_by_year = np.zeros((2101-2015,4))
+        tip_jet_by_year = np.zeros((2101-2015, 4))
         for index, year in enumerate(range(2015, 2101)):
             winter_start_date_1 = pd.to_datetime(f'{year}-01-01')
             winter_end_date_1 = pd.to_datetime(f'{year}-03-20')
@@ -299,13 +295,59 @@ class Member:
 
         return tip_jet_by_year
 
+    def wind_intensity_tip_jet(
+            self,
+            start_date: pd.Timestamp,
+            end_date: pd.Timestamp
+    ) -> np.ndarray:
+        """
+        Get the wind intensity of the Tip-Jet events between two specific dates
+
+        :param start_date: the beginning date of the data
+        :param end_date: the concluding date of the data
+        :return:  A numpy array containing the wind intensity of the Tip-Jets events between two specific dates
+        """
+        time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
+
+        # Create a DataFrame with time and indices
+        df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
+
+        time_indices = np.isin(df['time'], df.loc[(df['time'] >= start_date) & (df['time'] < end_date), 'time'].values)
+        wind_mag_area_tip_jet = self.ds_windmag.isel(time= np.where((self.eof > self.threshold) & time_indices)[0])
+
+        return wind_mag_area_tip_jet
+
+    def visualize_tip_jet_on_map(
+            self,
+            start_date: pd.Timestamp,
+            end_date: pd.Timestamp
+    ) -> xr.core.dataarray.DataArray:
+        """
+        Get the wind intensity of the Tip-Jet events averaged by time to be used on a map visualization
+
+        :param start_date: the beginning date of the data
+        :param end_date: the concluding date of the data
+        :return:  An xarray containing the wind intensity of the Tip-Jets with no date dimension (averaged by time)
+        """
+        time_values = netCDF4.num2date(self.wind_mag_area['time'], units=self.wind_mag_area['time'].units, calendar=self.wind_mag_area['time'].calendar)
+
+        # Create a DataFrame with time and indices
+        df = pd.DataFrame({'time': time_values, 'indices': range(len(time_values))})
+
+        time_indices = np.isin(df['time'], df.loc[(df['time'] >= start_date) & (df['time'] < end_date), 'time'].values)
+        wind_mag_tip_jet_events = self.ds_windmag.isel(time= np.where((self.eof > self.threshold) & time_indices)[0]).mean('time')
+        return wind_mag_tip_jet_events
+
 
 class Ensemble:
     """
     Ensemble of members. Useful to do statistics on future behaviour of Tip-Jet events
     """
 
-    def __init__(self, list_of_member, experiment):
+    def __init__(self,
+                 list_of_member: list,
+                 experiment: str
+                 ):
         """
         Initialises an ensemble of members by setting its attributes
 
@@ -329,7 +371,7 @@ class Ensemble:
         """
         annual_nb_tip_jet = {}
         for member_name, member in self.members.items():
-          annual_nb_tip_jet[member_name] = member.annual_events()
+            annual_nb_tip_jet[member_name] = member.annual_events()
         return annual_nb_tip_jet
 
     def mean_annual_events_ensemble(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -343,6 +385,43 @@ class Ensemble:
         std_annual_nb_tip_jet = np.std(array_member_nb_tip_jet, axis=0)
         return average_annual_nb_tip_jet, std_annual_nb_tip_jet
 
+    def tip_jet_wind_intensity_ensemble(
+            self,
+            start_date: pd.Timestamp,
+            end_date: pd.Timestamp
+    ) -> np.ndarray:
+        """
+        Gives the wind intensity during a Tip-Jet events
+
+        :param start_date: the beginning date of the data
+        :param end_date: the concluding date of the data
+        :return: array containing the wind intensity of Tip-Jet for all members
+        """
+        tip_jet_wind_intensity = {}
+        for member_name, member in self.members.items():
+            tip_jet_wind_intensity[member_name] = member.wind_intensity_tip_jet(start_date, end_date)
+
+        # Concatenate the wind intensities of all members
+        tip_jet_wind_intensity_members = np.concatenate([ds.values.flatten() for ds in tip_jet_wind_intensity.values()])
+        return tip_jet_wind_intensity_members
+
+    def visualize_tip_jet_on_map_ensemble(
+            self,
+            start_date: pd.Timestamp,
+            end_date: pd.Timestamp,
+    ) -> dict:
+        """
+        Gives the wind intensity during a Tip-Jet event averaged by time for each member
+
+        :param start_date: the beginning date of the data
+        :param end_date: the concluding date of the data
+        :return: a dictionary with the name of the member_id and the corresponding wind intensity of Tip-Jets avareged by time
+        """
+        scenario_members_visualization = {}
+        for member_name, member in self.members.items():
+            scenario_members_visualization[member_name] = member.visualize_tip_jet_on_map(start_date, end_date)
+        return scenario_members_visualization
+
     def seasonal_events_ensemble(self) -> dict:
         """
         Count the number of Tip-Jet events for each member and for each season of each year
@@ -351,7 +430,7 @@ class Ensemble:
         """
         seasonal_nb_tip_jet = {}
         for member_name, member in self.members.items():
-          seasonal_nb_tip_jet[member_name] = member.seasonal_events()
+            seasonal_nb_tip_jet[member_name] = member.seasonal_events()
         return seasonal_nb_tip_jet
 
     def mean_seasonal_events_ensemble(self) -> Tuple[np.ndarray, np.ndarray]:

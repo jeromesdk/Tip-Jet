@@ -10,6 +10,12 @@ growth and heavy fossil fuel use, while SSP126 (corresponding to a
 forcing of 2.6 W/m² by 2100) represents a sustainable, low-emission 
 trajectory.
 
+## Video presentation
+
+We highly recommand you to watch the following presentation where we go through the context of the study and the obtained results.
+
+[<img src="Greenland.jpg" width="50%">](https://youtu.be/vVUANkd5Hik "Context of the study and obtained results")
+
 ## Installation and Usage
 
 1. Download the content of the Git repository [Tip-Jet](https://github.com/jeromesdk/Tip-Jet).

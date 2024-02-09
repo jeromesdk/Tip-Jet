@@ -12,9 +12,7 @@ trajectory.
 
 ## Video presentation
 
-We highly recommand you to watch the following presentation where we go through the context of the study and the obtained results.
-
-[<img src="Greenland.jpg" width="50%">](https://youtu.be/vVUANkd5Hik "Context of the study and obtained results")
+We highly recommand you to watch the following presentation where we go through the context of the study and the obtained results: https://youtu.be/vVUANkd5Hik
 
 ## Installation and Usage
 

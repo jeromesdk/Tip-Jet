@@ -12,7 +12,7 @@ trajectory.
 
 ## Video presentation
 
-We highly recommand you to watch the following presentation where we go through the context of the study and the obtained results: https://youtu.be/vVUANkd5Hik
+We highly recommand you to watch the following presentation where we go through the context of the study and the obtained results: https://youtu.be/3lHfmf9MfyE
 
 ## Installation and Usage
 
